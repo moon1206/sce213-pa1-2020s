@@ -152,7 +152,7 @@ Each directory is separated by `:`. For example, if `PATH=/usr/bin:./bin:./sce21
 
 - Hint: `sigaction(), alarm()`, and `kill()`.
 
-- Make sure `alarm` is disabled once the program exits otherwise the shell itself might be be terminated. Use `sigaction` over `signal` for code portability. Also, have a look at `man 7 signal` to get an extensible explanation about signal handling.
+- Make sure `alarm` is disabled once the program exits otherwise the shell itself might be be terminated. Use `sigaction` over `signal` for code portability (Use `sigaction()` instead of `signal()`). Also, have a look at `man 7 signal` to get an extensible explanation about signal handling.
 
 
 
@@ -210,15 +210,15 @@ Each directory is separated by `:`. For example, if `PATH=/usr/bin:./bin:./sce21
   - DO NOT INCLUDE COVER PAGE. No need to specify your name nor student ID on the document.
   - YOU WILL GET 0 pts for the report if you do not comply the statements.
 - Git repository URL at git.ajou.ac.kr (10 pts)
+  - To get the points, you should actually use the repository to manage your code (i.e., have more than two commits which are hours aparts). You will not get any point if you just committed your final code.
   - Refer to https://www.youtube.com/channel/UC-Un-7jmeP-1OaHkS7awO0Q for using gitlab at Ajou University.
-	- You can register your git repository through PASubmit. The repository will be checked (at least) twice, during the registration and after the submission deadline. The status will be updated accordingly.
 	- How to create your repository to submit:
 		- Clone this repository into your computer.
 		- Create a *private* project from http://git.ajou.ac.kr.
-		- Push the local repository onto the gitlab page.
+		- Push the local repository onto the gitlab repository.
 		- Generate a deploy token from Settings/Repository/Deploy Token.
 		- Register at PASubmit using the repository URL and deploy token.
 		- PASubmit only accepts the repository address over HTTP.
-- You will not get any point if you just committed your final code. To get the points, you should actually use the repository to manage your code (i.e., have more than two commits which are hours aparts).
+	- The repository will be checked (at least) twice, during the registration and after the submission deadline. The status will be updated accordingly.
 - Free to make a question through AjouBb. However, YOU MIGHT NOT GET AN ANSWER IF THE QUESTIONS ARE ABOUT THOSE ALREADY SPECIFIED ON THIS HANDOUT.
 - QUESTIONS OVER EMAIL WILL BE IGNORED unless it concerns your privacy.
