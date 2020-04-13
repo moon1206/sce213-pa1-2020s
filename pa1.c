@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  **********************************************************************/
-//hello pa1
+//hello pa1.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
