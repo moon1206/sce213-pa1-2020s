@@ -12,11 +12,13 @@
  * GNU General Public License for more details.
  *
  **********************************************************************/
-//hello pa1.c
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "types.h"
 #include "parser.h"
@@ -65,9 +67,15 @@ static void set_timeout(unsigned int timeout)
 static int run_command(int nr_tokens, char *tokens[])
 {
 	/* This function is all yours. Good luck! */
-
-	if (strncmp(tokens[0], "exit", strlen("exit")) == 0) {
+	if(strncmp(tokens[0], "prompt", strlen("prompt")) == 0){
+		strcpy(__prompt, tokens[1]);
+	}
+	else if (strncmp(tokens[0], "exit", strlen("exit")) == 0) {
 		return 0;
+	}
+	else{	
+		
+
 	}
 
 	/*
