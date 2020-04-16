@@ -19,6 +19,7 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #include "types.h"
 #include "parser.h"
@@ -40,9 +41,12 @@ static void set_timeout(unsigned int timeout)
 {
 	__timeout = timeout;
 
-	if (__timeout == 0) {
+	if (__timeout == 0)
+	{
 		fprintf(stderr, "Timeout is disabled\n");
-	} else {
+	}
+	else
+	{
 		fprintf(stderr, "Timeout is set to %d second%s\n",
 				__timeout,
 				__timeout >= 2 ? "s" : "");
@@ -50,8 +54,6 @@ static void set_timeout(unsigned int timeout)
 }
 /*          ****** DO NOT MODIFY ANYTHING UP TO THIS LINE ******      */
 /*====================================================================*/
-
-
 /***********************************************************************
  * run_command()
  *
@@ -67,15 +69,40 @@ static void set_timeout(unsigned int timeout)
 static int run_command(int nr_tokens, char *tokens[])
 {
 	/* This function is all yours. Good luck! */
-	if(strncmp(tokens[0], "prompt", strlen("prompt")) == 0){
+	pid_t pid;
+	int status;
+	/* bulit_in_command*/
+	if (strncmp(tokens[0], "prompt", strlen("prompt")) == 0)
 		strcpy(__prompt, tokens[1]);
-	}
-	else if (strncmp(tokens[0], "exit", strlen("exit")) == 0) {
+	else if (strncmp(tokens[0], "exit", strlen("exit")) == 0)
 		return 0;
+	else if(strncmp(tokens[0], "timeout", strlen("timeout")) == 0){
+			
 	}
-	else{	
+	else if(strncmp(tokens[0], "for", strlen("for")) == 0){
 		
-
+	}
+	else if(strncmp(tokens[0], "cd", strlen("cd")) == 0){
+		
+	}
+	
+	else
+	{
+		printf("else");
+		while (true)
+		{
+			if (fork())
+			{
+				wait(&status);
+				return 1;
+			}
+			if (execlp(*tokens, *tokens, NULL) < 0)
+			{
+				fprintf(stderr, "No such file or directory\n");
+				return -1;
+			}
+			
+		}
 	}
 
 	/*
@@ -86,7 +113,6 @@ static int run_command(int nr_tokens, char *tokens[])
 
 	return 1;
 }
-
 
 /***********************************************************************
  * initialize()
@@ -99,11 +125,10 @@ static int run_command(int nr_tokens, char *tokens[])
  *   Return 0 on successful initialization.
  *   Return other value on error, which leads the program to exit.
  */
-static int initialize(int argc, char * const argv[])
+static int initialize(int argc, char *const argv[])
 {
 	return 0;
 }
-
 
 /***********************************************************************
  * finalize()
@@ -112,11 +137,9 @@ static int initialize(int argc, char * const argv[])
  *   Callback function for finalizing your code. Like @initialize(),
  *   you may leave this function blank.
  */
-static void finalize(int argc, char * const argv[])
+static void finalize(int argc, char *const argv[])
 {
-
 }
-
 
 /*====================================================================*/
 /*          ****** DO NOT MODIFY ANYTHING BELOW THIS LINE ******      */
@@ -128,14 +151,16 @@ static char *__color_end = "[0m";
 /***********************************************************************
  * main() of this program.
  */
-int main(int argc, char * const argv[])
+int main(int argc, char *const argv[])
 {
-	char command[MAX_COMMAND_LEN] = { '\0' };
+	char command[MAX_COMMAND_LEN] = {'\0'};
 	int ret = 0;
 	int opt;
 
-	while ((opt = getopt(argc, argv, "qm")) != -1) {
-		switch (opt) {
+	while ((opt = getopt(argc, argv, "qm")) != -1)
+	{
+		switch (opt)
+		{
 		case 'q':
 			__verbose = false;
 			break;
@@ -145,26 +170,31 @@ int main(int argc, char * const argv[])
 		}
 	}
 
-	if ((ret = initialize(argc, argv))) return EXIT_FAILURE;
+	if ((ret = initialize(argc, argv)))
+		return EXIT_FAILURE;
 
 	if (__verbose)
 		fprintf(stderr, "%s%s%s ", __color_start, __prompt, __color_end);
 
-	while (fgets(command, sizeof(command), stdin)) {	
-		char *tokens[MAX_NR_TOKENS] = { NULL };
+	while (fgets(command, sizeof(command), stdin))
+	{
+		char *tokens[MAX_NR_TOKENS] = {NULL};
 		int nr_tokens = 0;
 
 		if (parse_command(command, &nr_tokens, tokens) == 0)
 			goto more; /* You may use nested if-than-else, however .. */
 
 		ret = run_command(nr_tokens, tokens);
-		if (ret == 0) {
+		if (ret == 0)
+		{
 			break;
-		} else if (ret < 0) {
+		}
+		else if (ret < 0)
+		{
 			fprintf(stderr, "Error in run_command: %d\n", ret);
 		}
 
-more:
+	more:
 		if (__verbose)
 			fprintf(stderr, "%s%s%s ", __color_start, __prompt, __color_end);
 	}
