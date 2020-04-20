@@ -87,25 +87,20 @@ static int run_command(int nr_tokens, char *tokens[])
 	fflush(stdin); fflush(stdout);
 	/* This function is all yours. Good luck! */
 	pid_t pid; 
-	int status; int state;
+	int status; int state; int num;
 	name = tokens[0];
 	/* bulit_in_command*/
 	if (strncmp(tokens[0], "prompt", strlen("prompt")) == 0)
 		strcpy(__prompt, tokens[1]);
 	else if (strncmp(tokens[0], "exit", strlen("exit")) == 0)
 		return 0;
-	else if (strncmp(tokens[0], "timeout", strlen("timeout")) == 0)
-	{
+	else if (strncmp(tokens[0], "timeout", strlen("timeout")) == 0) {
 		if (tokens[1] == NULL)
 			printf("Current timeout is %d second\n", __timeout);
 		else
-		{
 			set_timeout(atoi(tokens[1]));
-		}
-
 	}
-	else if (strncmp(tokens[0], "for", strlen("for")) == 0)
-	{
+	else if (strncmp(tokens[0], "for", strlen("for")) == 0) {
 		int for_num = 1;
 		int for_loop_num = 1;
 		char dir[100] = {
@@ -174,15 +169,13 @@ static int run_command(int nr_tokens, char *tokens[])
 		}
 		return 1;
 	}
-	else if (strncmp(tokens[0], "cd", strlen("cd")) == 0)
-	{
+	else if (strncmp(tokens[0], "cd", strlen("cd")) == 0) {
 		if (strncmp(tokens[1], "~", strlen("~")) == 0)
 			chdir(getenv("HOME"));
 		else
 			chdir(tokens[1]);
 	}
-	else
-	{
+	else {	
 		sigaction(SIGALRM, &act, &old_sa);
 		//fflush(stdin);
 		pid = fork();
@@ -192,20 +185,19 @@ static int run_command(int nr_tokens, char *tokens[])
 			return -1;
 		}
 		if (pid == 0) {
-			execvp(tokens[0], tokens);
+			num = execvp(tokens[0], tokens);
+			if(num<0)
+				fprintf(stderr, "No such file or directory\n");
 		}
-		else {
+		else if(pid > 0) {
 			wait(&status);
 		//	alarm(0);
 			return 1;
 		}
+		else{
+			fprintf(stderr, "No such file or directory\n");
+		}
 	}
-
-	/*
-	fork();
-	exec();
-	...
-	*/
 	return 1;
 }
 
