@@ -20,9 +20,15 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
+#include <signal.h>
 
 #include "types.h"
 #include "parser.h"
+
+
+
+
 
 /*====================================================================*/
 /*          ****** DO NOT MODIFY ANYTHING FROM THIS LINE ******       */
@@ -66,42 +72,135 @@ static void set_timeout(unsigned int timeout)
  *   Return 0 when user inputs "exit"
  *   Return <0 on error
  */
+static void alarm_handler (int sig, siginfo_t *siginfo, void *context)
+{
+	struct temp_file *p;
+
+  for (p = temp_file_list; p; p = p->next)
+    unlink (p->name);
+}
 static int run_command(int nr_tokens, char *tokens[])
 {
 	/* This function is all yours. Good luck! */
-	pid_t pid;
-	int status;
+	struct sigaction act; 
+	memset(&act,0,sizeof act);
+	act.sa_handler = alarm_handler;
+	pid_t pid; 
+	int status; int state;
+	act.sa_flags = SA_NOCLDSTOP;
 	/* bulit_in_command*/
 	if (strncmp(tokens[0], "prompt", strlen("prompt")) == 0)
 		strcpy(__prompt, tokens[1]);
 	else if (strncmp(tokens[0], "exit", strlen("exit")) == 0)
 		return 0;
-	else if(strncmp(tokens[0], "timeout", strlen("timeout")) == 0){
-			
+	else if (strncmp(tokens[0], "timeout", strlen("timeout")) == 0)
+	{
+		if (tokens[1] == NULL)
+			printf("Current timeout is %d second\n", __timeout);
+		else
+		{
+			set_timeout(atoi(tokens[1]));
+		}
+
 	}
-	else if(strncmp(tokens[0], "for", strlen("for")) == 0){
-		
+	else if (strncmp(tokens[0], "for", strlen("for")) == 0)
+	{
+		int for_num = 1;
+		int for_loop_num = 1;
+		char dir[100] = {
+			0,
+		};
+		char* dir_2;
+		int i = 0;
+		int j = 0;
+		while (1)
+		{
+			for_loop_num *= atoi(tokens[1]);
+			if (strncmp(tokens[2], "for", strlen("for")) == 0)
+			{
+				tokens = tokens + 2;
+				continue;
+			}
+			else
+			{
+				while (for_loop_num > 0)
+				{
+					pid = fork();
+					if (pid == -1)
+					{
+						fprintf(stderr, "No such file or directory\n");
+						return -1;
+					}
+					if (pid == 0)
+					{
+						if (strncmp(tokens[2], "cd", strlen("cd")) == 0)
+						{
+							if (strncmp(tokens[3], "~", strlen("~")) == 0)
+								chdir(getenv("HOME"));
+							else if (strncmp(tokens[3], "..", strlen("..")) == 0)
+							{
+								getcwd(dir, sizeof(dir));
+								while (for_loop_num > 0)
+								{
+									int length = strlen(dir);
+									for(i=0;i<length;i++){
+										if(dir[i] == '/'){
+											j=i;
+										}
+									}
+									for(j;j<length;j++)
+										dir[j]='\0';
+									for_loop_num--;
+								}
+								chdir(dir);
+								break;
+							}
+							else
+								chdir(tokens[3]);
+							for_loop_num--;
+							continue;
+						}
+						execvp(tokens[2], tokens + 2);
+					}
+					else
+					{
+						wait(&status);
+					}
+					for_loop_num--;
+				}
+			}
+			break;
+		}
+		return 1;
 	}
-	else if(strncmp(tokens[0], "cd", strlen("cd")) == 0){
-		
+	else if (strncmp(tokens[0], "cd", strlen("cd")) == 0)
+	{
+		if (strncmp(tokens[1], "~", strlen("~")) == 0)
+			chdir(getenv("HOME"));
+		else
+			chdir(tokens[1]);
 	}
-	
 	else
 	{
-		printf("else");
-		while (true)
+		
+		pid = fork();
+		sigaction(SIGALRM, &act, NULL);
+		alarm(__timeout);
+		if (pid == -1)
 		{
-			if (fork())
-			{
-				wait(&status);
-				return 1;
-			}
-			if (execlp(*tokens, *tokens, NULL) < 0)
-			{
-				fprintf(stderr, "No such file or directory\n");
-				return -1;
-			}
-			
+			fprintf(stderr, "No such file or directory\n");
+			return -1;
+		}
+		if (pid == 0){
+			execvp(tokens[0], tokens);
+		}
+		else
+		{
+			if(state != 0)
+				fprintf(stderr, "%s is timed out\n", tokens[0]);
+			wait(&status);
+			alarm(0);
+			return 1;
 		}
 	}
 
