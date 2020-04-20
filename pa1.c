@@ -28,7 +28,7 @@
 
 
 
-
+char* name;
 
 /*====================================================================*/
 /*          ****** DO NOT MODIFY ANYTHING FROM THIS LINE ******       */
@@ -72,22 +72,23 @@ static void set_timeout(unsigned int timeout)
  *   Return 0 when user inputs "exit"
  *   Return <0 on error
  */
-static void alarm_handler (int sig, siginfo_t *siginfo, void *context)
+static void signal_handler (int signal_number)
 {
-	struct temp_file *p;
-
-  for (p = temp_file_list; p; p = p->next)
-    unlink (p->name);
+	fprintf(stderr, "%s is timed out\n", name);
 }
+
+struct sigaction act={
+		.sa_handler = signal_handler,
+		.sa_flags = 0,
+	}, old_sa;
+
 static int run_command(int nr_tokens, char *tokens[])
 {
+	fflush(stdin); fflush(stdout);
 	/* This function is all yours. Good luck! */
-	struct sigaction act; 
-	memset(&act,0,sizeof act);
-	act.sa_handler = alarm_handler;
 	pid_t pid; 
 	int status; int state;
-	act.sa_flags = SA_NOCLDSTOP;
+	name = tokens[0];
 	/* bulit_in_command*/
 	if (strncmp(tokens[0], "prompt", strlen("prompt")) == 0)
 		strcpy(__prompt, tokens[1]);
@@ -182,24 +183,20 @@ static int run_command(int nr_tokens, char *tokens[])
 	}
 	else
 	{
-		
+		sigaction(SIGALRM, &act, &old_sa);
+		//fflush(stdin);
 		pid = fork();
-		sigaction(SIGALRM, &act, NULL);
 		alarm(__timeout);
-		if (pid == -1)
-		{
+		if (pid == -1) {
 			fprintf(stderr, "No such file or directory\n");
 			return -1;
 		}
-		if (pid == 0){
+		if (pid == 0) {
 			execvp(tokens[0], tokens);
 		}
-		else
-		{
-			if(state != 0)
-				fprintf(stderr, "%s is timed out\n", tokens[0]);
+		else {
 			wait(&status);
-			alarm(0);
+		//	alarm(0);
 			return 1;
 		}
 	}
@@ -209,7 +206,6 @@ static int run_command(int nr_tokens, char *tokens[])
 	exec();
 	...
 	*/
-
 	return 1;
 }
 

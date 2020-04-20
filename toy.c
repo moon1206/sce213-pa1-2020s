@@ -23,6 +23,7 @@
 
 int main(int argc, const char *argv[])
 {
+	
 	fprintf(stderr, "pid  = %d\n", getpid());
 	fprintf(stderr, "argc = %d\n", argc);
 
@@ -34,8 +35,6 @@ int main(int argc, const char *argv[])
 		int sleep_sec = sleep_sec = atoi(argv[2]);
 		sleep(sleep_sec);
 	}
-
 	fprintf(stderr, "done!\n");
-
 	return 0;
 }
