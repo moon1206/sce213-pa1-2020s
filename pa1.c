@@ -26,9 +26,18 @@
 #include "types.h"
 #include "parser.h"
 
+char *name;
 
+static void signal_handler(int signal_number)
+{
+	fprintf(stderr, "%s is timed out\n", name);
+}
 
-char* name;
+struct sigaction act = {
+					 .sa_handler = signal_handler,
+					 .sa_flags = 0,
+},
+				 old_sa;
 
 /*====================================================================*/
 /*          ****** DO NOT MODIFY ANYTHING FROM THIS LINE ******       */
@@ -72,23 +81,15 @@ static void set_timeout(unsigned int timeout)
  *   Return 0 when user inputs "exit"
  *   Return <0 on error
  */
-static void signal_handler (int signal_number)
-{
-	fprintf(stderr, "%s is timed out\n", name);
-}
-
-struct sigaction act={
-		.sa_handler = signal_handler,
-		.sa_flags = 0,
-	}, old_sa;
-
 static int run_command(int nr_tokens, char *tokens[])
 {
-	fflush(stdin); fflush(stdout);
-	/* This function is all yours. Good luck! */
-	pid_t pid; 
-	int status; int state; int num;
+	fflush(stdin);
+	sigaction(SIGALRM, &act, &old_sa);
+
+	pid_t cpid;
+	int status; int num;
 	name = tokens[0];
+
 	/* bulit_in_command*/
 	if (strncmp(tokens[0], "prompt", strlen("prompt")) == 0)
 		strcpy(__prompt, tokens[1]);
@@ -99,53 +100,40 @@ static int run_command(int nr_tokens, char *tokens[])
 			printf("Current timeout is %d second\n", __timeout);
 		else
 			set_timeout(atoi(tokens[1]));
+		
 	}
-	else if (strncmp(tokens[0], "for", strlen("for")) == 0) {
-		int for_num = 1;
-		int for_loop_num = 1;
-		char dir[100] = {
-			0,
-		};
-		char* dir_2;
-		int i = 0;
-		int j = 0;
-		while (1)
-		{
+	else if (strncmp(tokens[0], "for", strlen("for")) == 0)
+	{
+		int for_loop_num = 1; int i = 0; int j = 0;
+		char dir[100] = {0, };
+
+		while (1) {
 			for_loop_num *= atoi(tokens[1]);
-			if (strncmp(tokens[2], "for", strlen("for")) == 0)
-			{
+			if (strncmp(tokens[2], "for", strlen("for")) == 0) {
 				tokens = tokens + 2;
 				continue;
 			}
-			else
-			{
-				while (for_loop_num > 0)
-				{
-					pid = fork();
-					if (pid == -1)
-					{
+			else {
+				while (for_loop_num > 0) {
+					cpid = fork();
+					if (cpid == -1) {
 						fprintf(stderr, "No such file or directory\n");
 						return -1;
 					}
-					if (pid == 0)
-					{
-						if (strncmp(tokens[2], "cd", strlen("cd")) == 0)
-						{
+					if (cpid == 0) {
+						if (strncmp(tokens[2], "cd", strlen("cd")) == 0) {
 							if (strncmp(tokens[3], "~", strlen("~")) == 0)
 								chdir(getenv("HOME"));
-							else if (strncmp(tokens[3], "..", strlen("..")) == 0)
-							{
+							else if (strncmp(tokens[3], "..", strlen("..")) == 0) {
 								getcwd(dir, sizeof(dir));
-								while (for_loop_num > 0)
-								{
+								while (for_loop_num > 0) {
 									int length = strlen(dir);
-									for(i=0;i<length;i++){
-										if(dir[i] == '/'){
-											j=i;
-										}
+									for (i = 0; i < length; i++) {
+										if (dir[i] == '/')
+											j = i;
 									}
-									for(j;j<length;j++)
-										dir[j]='\0';
+									for (j; j < length; j++)
+										dir[j] = '\0';
 									for_loop_num--;
 								}
 								chdir(dir);
@@ -159,9 +147,7 @@ static int run_command(int nr_tokens, char *tokens[])
 						execvp(tokens[2], tokens + 2);
 					}
 					else
-					{
 						wait(&status);
-					}
 					for_loop_num--;
 				}
 			}
@@ -169,33 +155,30 @@ static int run_command(int nr_tokens, char *tokens[])
 		}
 		return 1;
 	}
-	else if (strncmp(tokens[0], "cd", strlen("cd")) == 0) {
+	else if (strncmp(tokens[0], "cd", strlen("cd")) == 0)
+	{
 		if (strncmp(tokens[1], "~", strlen("~")) == 0)
 			chdir(getenv("HOME"));
 		else
 			chdir(tokens[1]);
 	}
-	else {	
-		sigaction(SIGALRM, &act, &old_sa);
-		//fflush(stdin);
-		pid = fork();
+	else {
 		alarm(__timeout);
-		if (pid == -1) {
+		cpid = fork();
+		if (cpid == -1) {
 			fprintf(stderr, "No such file or directory\n");
 			return -1;
 		}
-		if (pid == 0) {
+		else if (cpid == 0) {
 			num = execvp(tokens[0], tokens);
-			if(num<0)
+			if (num < 0)
 				fprintf(stderr, "No such file or directory\n");
 		}
-		else if(pid > 0) {
-			wait(&status);
-		//	alarm(0);
+		else {
+			waitpid(cpid, &status, 0);
+			kill(cpid, SIGKILL);
+			alarm(0);
 			return 1;
-		}
-		else{
-			fprintf(stderr, "No such file or directory\n");
 		}
 	}
 	return 1;
