@@ -28,16 +28,14 @@
 
 char *name;
 
-static void signal_handler(int signal_number)
-{
+static void signal_handler(int signal_number) {
 	fprintf(stderr, "%s is timed out\n", name);
 }
 
 struct sigaction act = {
 					 .sa_handler = signal_handler,
 					 .sa_flags = 0,
-},
-				 old_sa;
+},old_sa;
 
 /*====================================================================*/
 /*          ****** DO NOT MODIFY ANYTHING FROM THIS LINE ******       */
@@ -52,16 +50,13 @@ static char __prompt[MAX_TOKEN_LEN] = "$";
  */
 static unsigned int __timeout = 2;
 
-static void set_timeout(unsigned int timeout)
-{
+static void set_timeout(unsigned int timeout) {
+	
 	__timeout = timeout;
-
-	if (__timeout == 0)
-	{
+	if (__timeout == 0) {
 		fprintf(stderr, "Timeout is disabled\n");
 	}
-	else
-	{
+	else {
 		fprintf(stderr, "Timeout is set to %d second%s\n",
 				__timeout,
 				__timeout >= 2 ? "s" : "");
@@ -85,9 +80,10 @@ static int run_command(int nr_tokens, char *tokens[])
 {
 	fflush(stdin);
 	sigaction(SIGALRM, &act, &old_sa);
-
+	alarm(__timeout);
 	pid_t cpid;
 	int status; int num;
+	int i = 0; int j = 0; char dir[100] = {0, };
 	name = tokens[0];
 
 	/* bulit_in_command*/
@@ -102,10 +98,9 @@ static int run_command(int nr_tokens, char *tokens[])
 			set_timeout(atoi(tokens[1]));
 		
 	}
-	else if (strncmp(tokens[0], "for", strlen("for")) == 0)
-	{
-		int for_loop_num = 1; int i = 0; int j = 0;
-		char dir[100] = {0, };
+	else if (strncmp(tokens[0], "for", strlen("for")) == 0) {
+		int for_loop_num = 1; 
+		
 
 		while (1) {
 			for_loop_num *= atoi(tokens[1]);
@@ -140,14 +135,14 @@ static int run_command(int nr_tokens, char *tokens[])
 								break;
 							}
 							else
-								chdir(tokens[3]);
+							chdir(tokens[3]);
 							for_loop_num--;
 							continue;
 						}
 						execvp(tokens[2], tokens + 2);
 					}
 					else
-						wait(&status);
+					waitpid(cpid, &status, 0);
 					for_loop_num--;
 				}
 			}
@@ -155,15 +150,25 @@ static int run_command(int nr_tokens, char *tokens[])
 		}
 		return 1;
 	}
-	else if (strncmp(tokens[0], "cd", strlen("cd")) == 0)
-	{
+	else if (strncmp(tokens[0], "cd", strlen("cd")) == 0) {
 		if (strncmp(tokens[1], "~", strlen("~")) == 0)
 			chdir(getenv("HOME"));
+		else if (strncmp(tokens[1], "..", strlen("..")) == 0) {
+			getcwd(dir, sizeof(dir));
+			int length = strlen(dir);
+			for (i = 0; i < length; i++) {
+				if (dir[i] == '/')
+					j = i;
+				}
+				for (j; j < length; j++)
+					dir[j] = '\0';
+				chdir(dir);
+			}
 		else
 			chdir(tokens[1]);
 	}
+	/* external command*/
 	else {
-		alarm(__timeout);
 		cpid = fork();
 		if (cpid == -1) {
 			fprintf(stderr, "No such file or directory\n");
