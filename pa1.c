@@ -35,7 +35,7 @@ static void signal_handler(int signal_number) {
 struct sigaction act = {
 					 .sa_handler = signal_handler,
 					 .sa_flags = 0,
-},old_sa;
+}, old_sa;
 
 /*====================================================================*/
 /*          ****** DO NOT MODIFY ANYTHING FROM THIS LINE ******       */
