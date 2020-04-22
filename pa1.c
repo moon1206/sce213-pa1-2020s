@@ -27,11 +27,9 @@
 #include "parser.h"
 
 char *name;
-
 static void signal_handler(int signal_number) {
 	fprintf(stderr, "%s is timed out\n", name);
 }
-
 struct sigaction act = {
 					 .sa_handler = signal_handler,
 					 .sa_flags = 0,
